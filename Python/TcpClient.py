@@ -9,8 +9,9 @@ def receive(sock):
             if not data:
                 break
             print(data.decode(), end="")
+            print("> ", end="", flush=True)
     except:
-        print("Verbindung verloren")
+        print("\nVerbindung verloren")
 
 def main():
     if len(sys.argv) != 3:
@@ -24,12 +25,28 @@ def main():
     sock.connect((server_ip, server_port))
 
     print("Verbunden")
+    print("Befehle:")
+    print("  send <name> <message>                - Nachricht an einen Client")
+    print("  clientlist                           - Alle Clients anzeigen")
+    print("  sendall <message>                    - An alle Clients senden")
+    print("  dice invite <client>                 - Würfelspiel Einladung")
+    print("  dice join                            - Würfelspiel Einladung annehmen")
+    print("  dice decline                         - Würfelspiel Einladung ablehnen")
+    print("  exit                                 - Beenden")
+    print()
 
     threading.Thread(target=receive, args=(sock,), daemon=True).start()
 
     while True:
-        msg = input()
-        sock.sendall((msg + "\n").encode())
+        try:
+            msg = input("> ")
+            if msg.strip():
+                sock.sendall((msg + "\n").encode())
+        except KeyboardInterrupt:
+            print("\nBis bald!")
+            break
+        except:
+            break
 
 if __name__ == "__main__":
     main()

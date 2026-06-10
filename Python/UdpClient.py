@@ -3,6 +3,13 @@ import threading
 import sys
 
 # =========================================================
+# REGISTERED RECIPIENTS
+# =========================================================
+
+recipients = {}  # {name: (ip, port)}
+
+
+# =========================================================
 # RECEIVE THREAD
 # =========================================================
 
@@ -59,17 +66,47 @@ def main():
         input_line = input().strip()
 
         # =====================================================
-        # SEND
+        # REGISTER <Name> <IP> <Port>
         # =====================================================
 
-        if input_line.startswith("send "):
+        if input_line.startswith("register "):
 
             parts = input_line.split(" ", 3)
 
             if len(parts) != 4:
-                print(
-                    "Usage: send <ip> <port> <message>"
-                )
+                print("Usage: register <name> <ip> <port>")
+                continue
+
+            name = parts[1]
+            ip = parts[2]
+            port = int(parts[3])
+
+            recipients[name] = (ip, port)
+            print(f"✓ {name} ({ip}:{port}) registriert")
+
+        # =====================================================
+        # CLIENTLIST
+        # =====================================================
+
+        elif input_line == "clientlist":
+
+            if not recipients:
+                print("Keine Clients registriert")
+            else:
+                print("Registrierte Clients:")
+                for name, (ip, port) in recipients.items():
+                    print(f"  - {name}: {ip}:{port}")
+
+        # =====================================================
+        # SEND <IP> <Port> <Message>
+        # =====================================================
+
+        elif input_line.startswith("send "):
+
+            parts = input_line.split(" ", 3)
+
+            if len(parts) != 4:
+                print("Usage: send <ip> <port> <message>")
                 continue
 
             ip = parts[1]
@@ -81,6 +118,26 @@ def main():
             ).encode("utf-8")
 
             sock.sendto(final_msg, (ip, port))
+            print(f"✓ Nachricht an {ip}:{port} gesendet")
+
+        # =====================================================
+        # SENDALL <Message>
+        # =====================================================
+
+        elif input_line.startswith("sendall "):
+
+            message = input_line[8:].strip()
+
+            if not recipients:
+                print("Keine Clients registriert")
+                continue
+
+            for name, (ip, port) in recipients.items():
+                final_msg = (
+                    f"{own_name}: {message}"
+                ).encode("utf-8")
+                sock.sendto(final_msg, (ip, port))
+                print(f"✓ Nachricht an {name} gesendet")
 
         # =====================================================
         # EXIT
@@ -98,8 +155,11 @@ def main():
         else:
 
             print("Befehle:")
-            print("send <ip> <port> <message>")
-            print("exit")
+            print("  register <name> <ip> <port>  - Empfänger registrieren")
+            print("  clientlist                    - Alle Clients anzeigen")
+            print("  send <ip> <port> <message>   - An einen Client senden")
+            print("  sendall <message>             - An alle Clients senden")
+            print("  exit                          - Beenden")
 
 
 if __name__ == "__main__":
